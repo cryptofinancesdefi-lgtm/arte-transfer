@@ -974,6 +974,24 @@ button:focus:not(:focus-visible) {
   display: none;
 }
 
+.form-error-msg {
+  padding: var(--space-4) var(--space-5);
+  background: color-mix(in srgb, #DC2626 8%, transparent);
+  border: 1px solid color-mix(in srgb, #DC2626 25%, transparent);
+  border-radius: var(--radius-md);
+  margin-top: var(--space-5);
+  color: #991B1B;
+}
+
+.form-error-msg p {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+.form-error-msg[hidden] {
+  display: none;
+}
+
 /* ===================
    FOOTER
    =================== */

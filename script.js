@@ -169,19 +169,32 @@
       if (btnLoading) btnLoading.hidden = false;
       if (submitBtn) submitBtn.disabled = true;
 
-      // Simulate sending (replace with real API call)
-      setTimeout(function () {
+      // Send data to Google Sheets
+      var data = {
+        nome: form.querySelector('[name="nome"]').value.trim(),
+        email: form.querySelector('[name="email"]').value.trim(),
+        whatsapp: form.querySelector('[name="whatsapp"]').value.trim(),
+        produto: form.querySelector('[name="produto"]').value,
+        quantidade: form.querySelector('[name="quantidade"]').value,
+        mensagem: form.querySelector('[name="mensagem"]').value.trim()
+      };
+
+      var successEl = form.querySelector('.form-success');
+      var errorMsgEl = form.querySelector('.form-error-msg');
+
+      fetch('https://script.google.com/macros/s/AKfycbxGy_Nu-WLWFP8Rgsgag9L093rfswtA7m9VQ99FcY4Uxg93WzqR6MynyyS5CSoyJOMY/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(function () {
         // Show success
-        var successEl = form.querySelector('.form-success');
         if (successEl) successEl.hidden = false;
+        if (errorMsgEl) errorMsgEl.hidden = true;
 
         // Reset form
         form.reset();
-
-        // Reset button
-        if (btnText) btnText.hidden = false;
-        if (btnLoading) btnLoading.hidden = true;
-        if (submitBtn) submitBtn.disabled = false;
 
         // Clear any remaining error states
         form.querySelectorAll('.form-group.error').forEach(function (group) {
@@ -192,7 +205,23 @@
         setTimeout(function () {
           if (successEl) successEl.hidden = true;
         }, 6000);
-      }, 1500);
+      })
+      .catch(function () {
+        // Show error
+        if (errorMsgEl) errorMsgEl.hidden = false;
+        if (successEl) successEl.hidden = true;
+
+        // Hide error after 6 seconds
+        setTimeout(function () {
+          if (errorMsgEl) errorMsgEl.hidden = true;
+        }, 6000);
+      })
+      .finally(function () {
+        // Reset button
+        if (btnText) btnText.hidden = false;
+        if (btnLoading) btnLoading.hidden = true;
+        if (submitBtn) submitBtn.disabled = false;
+      });
     });
   }
 
