@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cryptofinancesdefi-lgtm.github.io/arte-transfer/sitemap.xml
