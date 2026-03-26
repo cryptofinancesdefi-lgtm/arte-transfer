@@ -1,88 +1,236 @@
-// Header scroll effect
-const header = document.getElementById('header');
+// ============================================
+// Arte Transfer — Landing Page Scripts
+// ============================================
 
-window.addEventListener('scroll', () => {
-  header.classList.toggle('scrolled', window.scrollY > 20);
-});
+(function () {
+  'use strict';
 
-// WhatsApp mask
-const whatsappInput = document.getElementById('whatsapp');
-whatsappInput.addEventListener('input', (e) => {
-  let v = e.target.value.replace(/\D/g, '');
-  if (v.length > 11) v = v.slice(0, 11);
-  if (v.length > 7) {
-    v = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
-  } else if (v.length > 2) {
-    v = `(${v.slice(0,2)}) ${v.slice(2)}`;
-  } else if (v.length > 0) {
-    v = `(${v}`;
+  // --- Header scroll effect ---
+  const header = document.getElementById('header');
+  let lastScroll = 0;
+
+  function onScroll() {
+    const scrollY = window.scrollY;
+    header.classList.toggle('scrolled', scrollY > 20);
+    lastScroll = scrollY;
   }
-  e.target.value = v;
-});
 
-// Form submission
-const form = document.getElementById('formOrcamento');
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
 
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
+  // --- Mobile menu ---
+  const menuToggle = document.querySelector('.menu-toggle');
+  const mobileMenu = document.getElementById('mobile-menu');
 
-  const data = new FormData(form);
-  const nome = data.get('nome');
-  const produto = document.getElementById('produto');
-  const produtoTexto = produto.options[produto.selectedIndex].text;
-  const quantidade = data.get('quantidade');
+  if (menuToggle && mobileMenu) {
+    menuToggle.addEventListener('click', function () {
+      const isOpen = this.getAttribute('aria-expanded') === 'true';
+      this.setAttribute('aria-expanded', String(!isOpen));
+      mobileMenu.hidden = isOpen;
+    });
 
-  // Build WhatsApp message
-  const msg = encodeURIComponent(
-    `Olá! Gostaria de solicitar um orçamento.\n\n` +
-    `*Nome:* ${nome}\n` +
-    `*E-mail:* ${data.get('email')}\n` +
-    `*WhatsApp:* ${data.get('whatsapp')}\n` +
-    `*Produto:* ${produtoTexto}\n` +
-    `*Quantidade:* ${quantidade}\n` +
-    `*Mensagem:* ${data.get('mensagem') || 'Sem mensagem adicional'}`
-  );
+    // Close menu on link click
+    mobileMenu.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        menuToggle.setAttribute('aria-expanded', 'false');
+        mobileMenu.hidden = true;
+      });
+    });
 
-  // Show success state
-  form.innerHTML = `
-    <div class="form-success">
-      <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-        <circle cx="32" cy="32" r="30" stroke="#25D366" stroke-width="3" fill="rgba(37,211,102,0.1)"/>
-        <path d="M20 32L28 40L44 24" stroke="#25D366" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <h3>Solicitação enviada!</h3>
-      <p>Você será redirecionado para o WhatsApp para confirmar seu orçamento.</p>
-    </div>
-  `;
+    // Close menu on Escape
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !mobileMenu.hidden) {
+        menuToggle.setAttribute('aria-expanded', 'false');
+        mobileMenu.hidden = true;
+        menuToggle.focus();
+      }
+    });
+  }
 
-  // Redirect to WhatsApp
-  setTimeout(() => {
-    window.open(`https://wa.me/5569992641022?text=${msg}`, '_blank');
-  }, 1500);
-});
+  // --- Smooth scroll for anchor links ---
+  document.querySelectorAll('a[href^="#"]').forEach(function (anchor) {
+    anchor.addEventListener('click', function (e) {
+      var href = this.getAttribute('href');
+      if (href === '#' || href === '#main') return;
 
-// Smooth reveal on scroll
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
-    }
+      var target = document.querySelector(href);
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        // Set focus for accessibility
+        target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+      }
+    });
   });
-}, { threshold: 0.1 });
 
-document.querySelectorAll('.produto-card, .diferencial-card').forEach(el => {
-  el.style.opacity = '0';
-  el.style.transform = 'translateY(20px)';
-  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-  observer.observe(el);
-});
+  // --- WhatsApp phone mask ---
+  var whatsappInput = document.getElementById('whatsapp');
+  if (whatsappInput) {
+    whatsappInput.addEventListener('input', function () {
+      var value = this.value.replace(/\D/g, '');
+      if (value.length > 11) value = value.slice(0, 11);
 
-// Add visible class styles
-document.head.insertAdjacentHTML('beforeend', `
-  <style>
-    .produto-card.visible, .diferencial-card.visible {
-      opacity: 1 !important;
-      transform: translateY(0) !important;
+      if (value.length > 6) {
+        this.value = '(' + value.slice(0, 2) + ') ' + value.slice(2, 7) + '-' + value.slice(7);
+      } else if (value.length > 2) {
+        this.value = '(' + value.slice(0, 2) + ') ' + value.slice(2);
+      } else if (value.length > 0) {
+        this.value = '(' + value;
+      }
+    });
+  }
+
+  // --- Form validation & submission ---
+  var form = document.getElementById('formOrcamento');
+  if (form) {
+    var validations = {
+      nome: {
+        test: function (v) { return v.trim().length >= 3; },
+        msg: 'Informe seu nome completo.'
+      },
+      email: {
+        test: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); },
+        msg: 'Informe um e-mail válido.'
+      },
+      whatsapp: {
+        test: function (v) { return v.replace(/\D/g, '').length >= 10; },
+        msg: 'Informe um WhatsApp válido.'
+      },
+      produto: {
+        test: function (v) { return v !== ''; },
+        msg: 'Selecione um produto.'
+      },
+      quantidade: {
+        test: function (v) { return parseInt(v, 10) >= 1; },
+        msg: 'Informe a quantidade desejada.'
+      }
+    };
+
+    function validateField(name) {
+      var field = form.querySelector('[name="' + name + '"]');
+      var group = field.closest('.form-group');
+      var errorEl = group.querySelector('.form-error');
+      var rule = validations[name];
+
+      if (!rule) return true;
+
+      var isValid = rule.test(field.value);
+      group.classList.toggle('error', !isValid);
+      if (errorEl) {
+        errorEl.textContent = isValid ? '' : rule.msg;
+      }
+
+      return isValid;
     }
-  </style>
-`);
+
+    // Validate on blur
+    Object.keys(validations).forEach(function (name) {
+      var field = form.querySelector('[name="' + name + '"]');
+      if (field) {
+        field.addEventListener('blur', function () {
+          validateField(name);
+        });
+        // Clear error on input
+        field.addEventListener('input', function () {
+          var group = this.closest('.form-group');
+          if (group.classList.contains('error')) {
+            validateField(name);
+          }
+        });
+      }
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      // Validate all fields
+      var allValid = true;
+      Object.keys(validations).forEach(function (name) {
+        if (!validateField(name)) {
+          allValid = false;
+        }
+      });
+
+      if (!allValid) {
+        // Focus first error field
+        var firstError = form.querySelector('.form-group.error input, .form-group.error select');
+        if (firstError) firstError.focus();
+        return;
+      }
+
+      // Show loading state
+      var btnText = form.querySelector('.btn-text');
+      var btnLoading = form.querySelector('.btn-loading');
+      var submitBtn = form.querySelector('button[type="submit"]');
+
+      if (btnText) btnText.hidden = true;
+      if (btnLoading) btnLoading.hidden = false;
+      if (submitBtn) submitBtn.disabled = true;
+
+      // Simulate sending (replace with real API call)
+      setTimeout(function () {
+        // Show success
+        var successEl = form.querySelector('.form-success');
+        if (successEl) successEl.hidden = false;
+
+        // Reset form
+        form.reset();
+
+        // Reset button
+        if (btnText) btnText.hidden = false;
+        if (btnLoading) btnLoading.hidden = true;
+        if (submitBtn) submitBtn.disabled = false;
+
+        // Clear any remaining error states
+        form.querySelectorAll('.form-group.error').forEach(function (group) {
+          group.classList.remove('error');
+        });
+
+        // Hide success after 6 seconds
+        setTimeout(function () {
+          if (successEl) successEl.hidden = true;
+        }, 6000);
+      }, 1500);
+    });
+  }
+
+  // --- Intersection Observer for scroll animations ---
+  if ('IntersectionObserver' in window) {
+    var animatedElements = document.querySelectorAll(
+      '.product-card, .diff-card, .section-header, .orcamento-info, .form-card'
+    );
+
+    var observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    animatedElements.forEach(function (el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+      observer.observe(el);
+    });
+
+    // Respect reduced motion preference
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      animatedElements.forEach(function (el) {
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+        el.style.transition = 'none';
+        observer.unobserve(el);
+      });
+    }
+  }
+
+})();
